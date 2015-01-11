@@ -49,7 +49,8 @@ class CWenkuPage():
         '''
         Get all the pages comments.
         '''
-        commentModule = mCWebRender.find_element_by_id("doc-comment")
+        commentModule = mCWebRender.find_elementss_by_id("doc-comment")
+        if len(commentModule) == 0: return False
         users = self.getCommentUsers(commentModule)
         while True:
             if not self.nextPage(mCWebRender):
@@ -82,10 +83,15 @@ def main(itemsNum):
         if not resources: break
         for resource in resources:
             print resource['resource_id']
-            mCWenkuPage.getPage(url+resource['href'], mCWebRender)
-            users = mCWenkuPage.getAllComment(mCWebRender)
-            if len(users) == 0:
-                continue
+            num = 0
+            while True:
+                mCWenkuPage.getPage(url+resource['href'], mCWebRender)
+                users = mCWenkuPage.getAllComment(mCWebRender)
+                num += 1
+                if users is False:
+                    time.sleep(30)
+                if len(users) == 0 or num > 20:
+                    break
             updateSQL = 'update resources set flag=4 where resource_id=%d' % resource['resource_id']
             db.UpdateTb(updateSQL)
             values = [(user[0], resource['resource_id'], user[1], user[2]) for user in users]

@@ -39,13 +39,6 @@ def readUrl(db):
     url = 'http://wenku.baidu.com' + books[0]['href'] + lessons[0]['href']
     return lessons[0]['lesson_id'], url
 
-def readUrl2(db, itemsNum):
-    sql = 'select lesson_id, book_id, href from lessons where flag = 0 and href not like "%/portal%" LIMIT %d ' %  itemsNum
-    lessons = db.InquiryTb(sql)
-    if len(lessons) == 0:
-        return False
-    return lessons
-
 def readHrefPage(url):
     soup = getSoup(url)
     docListSoup = soup.findAll("div", {"class": "doc-list"})
