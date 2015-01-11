@@ -11,7 +11,10 @@ def getSoup(url):
     while True:
         time.sleep(2)
         html = getUrlSource(url)
-        if len(html) != 0 or num >20:
+        if len(html) != 0:
+            print 'Right:\t', url
+            break
+        elif  num > 20:
             print 'Wrong:\t', url
             break
     soup = BeautifulSoup(html)
