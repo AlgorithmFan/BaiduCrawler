@@ -12,6 +12,7 @@ def getSoup(url):
         time.sleep(2)
         html = getUrlSource(url)
         if len(html) != 0 or num >20:
+            print 'Wrong:\t', url
             break
     soup = BeautifulSoup(html)
     return soup
@@ -29,14 +30,17 @@ def readHrefPage(url):
     if len(docListSoup) == 0:
         return False
     Hrefs = []
-    hrefSoups = docListSoup[0].findAll("a", {"title": True, "href": True})
+    hrefSoups = docListSoup[0].findAll("div", {"class": "doc-list-title"})
     for hrefSoup in hrefSoups:
+        aSoups = hrefSoup.findAll("a", {"title": True, "href": True})
+        if len(aSoups) == 0:    continue
         title, href = '', ''
-        for tag, value in hrefSoup.attrs:
-            if tag == 'title':
-                title = value
-            elif tag == 'href':
-                href = value
+        for aSoup in aSoups:
+            for tag, value in aSoup.attrs:
+                if tag == 'title':
+                    title = value
+                elif tag == 'href':
+                    href = value
         if len(title) != 0 and (len(href) != 0):
             Hrefs.append((title, href))
     return Hrefs
@@ -86,5 +90,5 @@ def main(coreNum, itemsNum):
 
 if __name__ == '__main__':
     coreNum =4
-    main(coreNum,20)
+    main(coreNum,1)
 

@@ -24,7 +24,7 @@ def getUrlSource(url):
         html = gzipper.read()
         resp.close()
     except:
-        print 'Wrong:\t', url
+        #print 'Wrong:\t', url
         html = ''
     return html
 
