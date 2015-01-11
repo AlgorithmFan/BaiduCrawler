@@ -14,6 +14,16 @@ class CWenkuPage():
     def getPage(self, url, mCWebRender):
         self.url = url
         mCWebRender.get(url)
+        num = 1
+        while True:
+            comments = mCWebRender.find_elements_by_xpath("//div[@id='doc-comment']")
+            if len(comments) != 0:
+                break
+            elif num > 20:
+                break
+            else:
+                num += 1
+                time.sleep(20)
 
     def nextPage(self, mCWebRender):
         '''
@@ -21,26 +31,35 @@ class CWenkuPage():
         '''
         pagerModules = mCWebRender.find_elements_by_xpath("//div[@class='pager-inner']")
         if len(pagerModules) == 0: return False
-        nextpage = pagerModules[0].find_elements_by_xpath("//h4[@class='next pn-item']")
+        nextpage = pagerModules[0].find_elements_by_xpath("a[@class='next pn-item']")
         if len(nextpage) == 0:
             return False
         nextpage[0].click()
         time.sleep(3)
         return True
 
-    def getCommentUsers(self, commentModule):
+    def getCommentUsers(self, mCWebRender):
         '''
         Get the commenter for this article.
         '''
-        commentUsers = commentModule.find_elements_by_xpath("li[@class='ct-item']")
         users = []
-        for userModule in commentUsers:
+        commentUsers = mCWebRender.find_elements_by_xpath("//ul[@id='comment-list']")
+        if len(commentUsers) == 0: return users
+        userModules = commentUsers[0].find_elements_by_xpath("li[@class='ct-item']")
+        for userModule in userModules:
             # print person.text
             #time.sleep(1)
-            user_id = int(userModule.get_attribute("data-reply-id"))
-            dayModule = userModule.find_element_by_xpath("div[@class='ct-extra-into']")
-            day = dayModule.find_element_by_xpath("p").text
-            scoreModule = userModule.find_elements_by_xpath("b[@class='ic-star-score star-score-on']")
+            user_id = userModule.get_attribute("data-reply-id")
+            if len(user_id) > 0:
+                user_id = int(user_id)
+            else:
+                continue
+            dayModule = userModule.find_elements_by_xpath("div/div/div[@class='ct-extra-into']")
+            if len(dayModule):
+                day = dayModule[0].find_element_by_xpath("p").text
+            else:
+                day = ''
+            scoreModule = userModule.find_elements_by_xpath("div/div/div/div/p/span/b[@class='ic-star-score star-score-on']")
             score = len(scoreModule)
             users.append((user_id, day, score))
         return users
@@ -49,13 +68,11 @@ class CWenkuPage():
         '''
         Get all the pages comments.
         '''
-        commentModule = mCWebRender.find_elementss_by_id("doc-comment")
-        if len(commentModule) == 0: return False
-        users = self.getCommentUsers(commentModule)
+        users = self.getCommentUsers(mCWebRender)
         while True:
             if not self.nextPage(mCWebRender):
                 break
-            users.extend(self.getCommentUsers(commentModule))
+            users.extend(self.getCommentUsers(mCWebRender))
         return users
 
 def getResources(db, itemsNum):
@@ -63,7 +80,7 @@ def getResources(db, itemsNum):
     3: represent being crawling the comments.
     4: represent be crawled the comments.
     '''
-    sql = 'select resource_id, href from resources where flag != 4 and flag !=3 LIMIT %d ' %  itemsNum
+    sql = 'select resource_id, href from resources where flag = 2 LIMIT %d ' %  itemsNum
     resources = db.InquiryTb(sql)
     if len(resources) == 0:
         return False
@@ -71,6 +88,17 @@ def getResources(db, itemsNum):
     for i in range(itemsNum):
         db.UpdateTb(sql % resources[i]['resource_id'])
     return resources
+
+def test():
+    mCWebRender = CWebRender()
+    mCWenkuPage = CWenkuPage()
+    #url = 'http://wenku.baidu.com/view/54be8d6b0912a21615792935.html?fr=gaokao'
+    url = 'http://wenku.baidu.com/view/fa4ef92d915f804d2b16c197.html?re=view'
+    #insertSQL = 'insert into comment(user_id, resource_id, score, time) values(%s, %s, %s, %s)'
+    mCWenkuPage.getPage(url, mCWebRender)
+    users = mCWenkuPage.getAllComment(mCWebRender)
+    mCWebRender.closeUrl()
+
 
 def main(itemsNum):
     db = connectDb()
@@ -80,18 +108,20 @@ def main(itemsNum):
     insertSQL = 'insert into comment(user_id, resource_id, score, time) values(%s, %s, %s, %s)'
     while True:
         resources = getResources(db, itemsNum)
-        if not resources: break
+        if not resources:
+            fp = open('flag.txt', 'r')
+            flag = cPickle.load(fp)
+            fp.close()
+            if flag == 0:
+                break
+            else:
+                time.sleep(1200)
+                continue
         for resource in resources:
             print resource['resource_id']
-            num = 0
-            while True:
-                mCWenkuPage.getPage(url+resource['href'], mCWebRender)
-                users = mCWenkuPage.getAllComment(mCWebRender)
-                num += 1
-                if users is False:
-                    time.sleep(30)
-                if len(users) == 0 or num > 20:
-                    break
+            mCWenkuPage.getPage(url+resource['href'], mCWebRender)
+            users = mCWenkuPage.getAllComment(mCWebRender)
+
             updateSQL = 'update resources set flag=4 where resource_id=%d' % resource['resource_id']
             db.UpdateTb(updateSQL)
             values = [(user[0], resource['resource_id'], user[1], user[2]) for user in users]
@@ -100,5 +130,7 @@ def main(itemsNum):
     db.CloseDb()
 
 if __name__ == '__main__':
+    import cPickle
     main(100)
+    #test()
 

@@ -75,6 +75,10 @@ def readHrefLesson(lesson_id, url):
 
 def main(coreNum, itemsNum):
     db = connectDb()
+    flag = 1
+    fp = open('flag.txt', 'w')
+    cPickle.dump(flag, fp)
+    fp.close()
     while True:
         lessons = getLessons(db, itemsNum)
         if not lessons: break
@@ -82,16 +86,21 @@ def main(coreNum, itemsNum):
         InsertSQL = 'insert into resources(lesson_id, title, href, type)  values(%s, %s, %s, %s)'
         UpdateSQL = 'update lessons set flag = %d where lesson_id=%d'
         for i in range(len(lessons)):
+            print 'Lesson ID: ', lessons[0]['book_id']
             sql = 'select href from books where book_id=%d' % lessons[0]['book_id']
             books = db.InquiryTb(sql)
             url = 'http://wenku.baidu.com' + books[0]['href'] + lessons[0]['href']
             values = readHrefLesson(lessons[i]['lesson_id'], url)
             db.InsertTb(InsertSQL, values)
             db.UpdateTb(UpdateSQL % (1, lessons[0]['lesson_id']))
-
+    flag = 0
+    fp = open('flag.txt', 'w')
+    cPickle.dump(flag, fp)
+    fp.close()
     db.CloseDb()
 
 if __name__ == '__main__':
-    coreNum =4
+    import cPickle
+    coreNum = 4
     main(coreNum,1)
 
