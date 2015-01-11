@@ -27,7 +27,7 @@ class CDatabase():
             print 'Cannot connect to the database --%s' % self.database
             exit(0)
         
-    def InquiryTb(self, sql, flag):
+    def InquiryTb(self, sql, flag=0):
         '''
         flag==0: select all the items from the table
         flag==1: select only one item from the table
@@ -57,6 +57,7 @@ class CDatabase():
             cursor = self.connection.cursor()
             if len(value)==1:
                 cursor.execute(sql, value[0])
+                return cursor.lastrowid
             else:
                 cursor.executemany(sql, value)
             self.connection.commit()
@@ -68,6 +69,7 @@ class CDatabase():
                 cursor = self.connection.cursor()
                 if len(value)==1:
                     cursor.execute(sql, value[0])
+                    return cursor.lastrowid
                 else:
                     cursor.executemany(sql, value)
                 self.connection.commit()
@@ -100,11 +102,11 @@ class CDatabase():
             print "Truncate Error %d: %s" % (e.args[0], e.args[1])
 
          
-    def UpdateTb(self, sql, value):
+    def UpdateTb(self, sql):
         ''''''
         try:
             cursor = self.connection.cursor()
-            cursor.execute(sql, value)
+            cursor.execute(sql)
             self.connection.commit()
             cursor.close()
         except MySQLdb.Error as e:

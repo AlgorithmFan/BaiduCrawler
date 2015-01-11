@@ -32,7 +32,7 @@ def connectDb():
     ip = 'localhost'
     user = 'root'
     password = '123456'
-    database = 'scienceblogs'
+    database = 'baidu'
     db = CDatabase(ip, user, password, database)
     db.OpenDb()
     return db
