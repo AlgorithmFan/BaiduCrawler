@@ -15,9 +15,16 @@ class CWKCrawler():
 
     def getContentLXML(self, url):
         ''''''
-        mSourceCode = getUrlSource(url)
-        if len(mSourceCode) == 0:
-            return False
+        num = 1
+        while True:
+            mSourceCode = getUrlSource(url)
+            if len(mSourceCode) != 0:
+                break
+            elif len(mSourceCode) == 0:
+                time.sleep(20)
+                num += 1
+            elif num > 10:
+                return False
         page = etree.HTML(mSourceCode)
         titleModules = page.xpath("//div[@class='at_c']")
         #Read title
@@ -47,9 +54,16 @@ class CWKCrawler():
 
     def getContentBS(self, url):
         time.sleep(2)
-        mSourceCode = getUrlSource(url)
-        if len(mSourceCode) == 0:
-            return False
+        num = 1
+        while True:
+            mSourceCode = getUrlSource(url)
+            if len(mSourceCode) != 0:
+                break
+            elif len(mSourceCode) == 0:
+                time.sleep(20)
+                num += 1
+            elif num > 10:
+                return False
         soup = BeautifulSoup(mSourceCode)
         #Read title
         title = soup.find("div",{"class":"at_c"})

@@ -13,6 +13,7 @@ class CWebRender(webdriver.Firefox):
         #profile.set_preference('network.proxy.ssl_port', 8080)
         profile.update_preferences()
         webdriver.Firefox.__init__(self, profile)
+        self.set_page_load_timeout(60)
 
     def closeUrl(self):
         self.close()

@@ -10,20 +10,26 @@ from CommonModules import connectDb
 class CWenkuPage():
     def __init__(self):
         ''''''
+        self.url = ''
 
     def getPage(self, url, mCWebRender):
         self.url = url
-        mCWebRender.get(url)
-        num = 1
-        while True:
-            comments = mCWebRender.find_elements_by_xpath("//div[@id='doc-comment']")
-            if len(comments) != 0:
-                break
-            elif num > 20:
-                break
-            else:
-                num += 1
-                time.sleep(20)
+        try:
+            num = 1
+            while True:
+                mCWebRender.get(url)
+                comments = mCWebRender.find_elements_by_xpath("//div[@id='doc-comment']")
+                if len(comments) != 0:
+                    break
+                elif num > 5:
+                    break
+                else:
+                    num += 1
+                    time.sleep(20)
+            return True
+        except:
+            return False
+
 
     def nextPage(self, mCWebRender):
         '''
@@ -70,9 +76,12 @@ class CWenkuPage():
         '''
         users = self.getCommentUsers(mCWebRender)
         while True:
-            if not self.nextPage(mCWebRender):
-                break
-            users.extend(self.getCommentUsers(mCWebRender))
+            try:
+                if not self.nextPage(mCWebRender):
+                    break
+                users.extend(self.getCommentUsers(mCWebRender))
+            except:
+                self.getPage(self.url, mCWebRender)
         return users
 
 def getResources(db, itemsNum):
@@ -85,7 +94,7 @@ def getResources(db, itemsNum):
     if len(resources) == 0:
         return False
     sql = 'update resources set flag = 3 where resource_id=%d'
-    for i in range(itemsNum):
+    for i in range(len(resources)):
         db.UpdateTb(sql % resources[i]['resource_id'])
     return resources
 
@@ -112,14 +121,21 @@ def main(itemsNum):
             fp = open('flag.txt', 'r')
             flag = cPickle.load(fp)
             fp.close()
+
             if flag == 0:
                 break
             else:
-                time.sleep(1200)
+                print 'Sleep: ', time.localtime()
+                db.CloseDb()
+                time.sleep(600)
+                print 'Wake up:', time.localtime()
+                db = connectDb()
                 continue
         for resource in resources:
             print resource['resource_id']
-            mCWenkuPage.getPage(url+resource['href'], mCWebRender)
+            flag = mCWenkuPage.getPage(url+resource['href'], mCWebRender)
+            if not flag:
+                continue
             users = mCWenkuPage.getAllComment(mCWebRender)
 
             updateSQL = 'update resources set flag=4 where resource_id=%d' % resource['resource_id']

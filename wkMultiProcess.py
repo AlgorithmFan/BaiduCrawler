@@ -23,7 +23,7 @@ def readResourceHrefs(db, itemsNum):
     if len(resources) == 0:
         return False
     sql = 'update resources set flag = 1 where resource_id=%d'
-    for i in range(itemsNum):
+    for i in range(len(resources)):
         db.UpdateTb(sql % resources[i]['resource_id'])
     return resources
 
@@ -48,6 +48,7 @@ def main(coreNum, itemsNum):
     sql = 'update resources set content="%s",flag=2 where resource_id=%d'
     db = connectDb()
     while True:
+        print 'Read resources from database.'
         resources = readResourceHrefs(db, itemsNum)
         if not resources:
             fp = open('flag.txt', 'r')
@@ -56,7 +57,11 @@ def main(coreNum, itemsNum):
             if flag == 0:
                 break
             else:
-                time.sleep(1200)
+                print 'Sleep: ', time.localtime()
+                db.CloseDb()
+                time.sleep(600)
+                print 'Wake up:', time.localtime()
+                db = connectDb()
                 continue
         pool = Pool(processes=coreNum)
         results = {}
@@ -68,10 +73,11 @@ def main(coreNum, itemsNum):
         for i in results:
             print resources[i]['resource_id']
             wkPage = results[i].get()
+            if not wkPage: continue
             db.UpdateTb(sql %(wkPage['content'], resources[i]['resource_id']))
     db.CloseDb()
 
 if __name__ == '__main__':
     import cPickle
-    main(4, 10000)
+    main(4, 200)
     #test(1)
